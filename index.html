@@ -116,8 +116,10 @@ footer p{font-size:13px;color:var(--muted)}
         <p class="lede">You don't know who made it or where it points. Yet the moment this page opened, it started building a profile of you — automatically, silently, without asking.</p>
       </div>
     </div>
-    <p class="pill">This demo only shows the data to you · <b>we store nothing</b></p>
+    <p class="pill">This demo only shows the data to you · <b>we store nothing about you</b></p>
   </header>
+
+  <!--SERVER_SEEN-->
 
   <section>
     <p class="eyebrow">Your scan receipt</p>
@@ -216,7 +218,7 @@ footer p{font-size:13px;color:var(--muted)}
 
     <div class="safe">
       <h3>Relax — this one really is a demo</h3>
-      <p class="sub">This page reads all of the above only to show it back to you, right here on your screen. It keeps no log and sends nothing to us. The one outside request it makes is a lookup of your IP's rough location through a public service — the same thing any website can do the instant you land on it. The one thing it keeps is a random ID in your browser's local storage, which you can clear in your browser settings. Trackers run the same idea across thousands of sites at once. The point is simply to show how much a page you never chose can learn in a heartbeat.</p>
+      <p class="sub">This page reads all of the above only to show it back to you, right here on your screen. It keeps no log of visitors and sends nothing about you anywhere. The only thing counted is how many times each sticker is scanned. The one outside request it makes is a lookup of your IP's rough location through a public service — the same thing any website can do the instant you land on it. The one thing it keeps is a random ID in your browser's local storage, which you can clear in your browser settings. Trackers run the same idea across thousands of sites at once. The point is simply to show how much a page you never chose can learn in a heartbeat.</p>
     </div>
   </section>
 
@@ -320,7 +322,9 @@ footer p{font-size:13px;color:var(--muted)}
 
   <footer>
     <p><b>Take a breath before the next scan.</b> If this made you pause, it worked.</p>
-    <p class="credit">A cyber-awareness demonstration · no data leaves this page except a public IP-location lookup</p>
+    <p class="credit">A cyber-awareness demonstration · no data leaves this page except a public IP-location lookup and a count of sticker scans</p>
+    <p class="fine" id="counter-line">Sticker counter: loading…</p>
+    <p class="fine">The counter records how many times each sticker location was scanned. It does not record who scanned it.</p>
   </footer>
 
 </div>
@@ -877,6 +881,23 @@ footer p{font-size:13px;color:var(--muted)}
     if(src && hdr) hdr.textContent = "Since last visit: " + src.textContent;
   }
   setTimeout(function(){ drift(); mirrorDrift(); }, 2600);
+
+  // Sticker counter: totals from the server, shown to everyone.
+  (function loadCounter(){
+    var counterEl = document.getElementById("counter-line");
+    if(!counterEl || !window.fetch) return;
+    fetch("/api/counts", {cache: "no-store"}).then(function(resp){
+      if(!resp.ok) throw new Error("status " + resp.status);
+      return resp.json();
+    }).then(function(data){
+      var parts = Object.keys(data.by_sticker).map(function(code){
+        return data.by_sticker[code].label + " " + data.by_sticker[code].count;
+      });
+      counterEl.textContent = "Sticker scans counted on this site: " + data.total + " (" + parts.join(", ") + ").";
+    }).catch(function(){
+      counterEl.textContent = "Sticker counter: not available on this copy of the page.";
+    });
+  })();
 
   function render(){
     var group = document.getElementById("deep-group");
