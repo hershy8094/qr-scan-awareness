@@ -96,6 +96,10 @@ footer p{font-size:13px;color:var(--muted)}
 .btn{font-family:var(--f-mono);font-weight:700;font-size:12.5px;letter-spacing:.04em;text-transform:uppercase;background:var(--ink);color:var(--paper);border:0;border-radius:8px;padding:11px 15px;cursor:pointer;width:max-content;max-width:100%}
 .btn:focus-visible{outline:2px solid var(--tape);outline-offset:2px}
 .fine{font-size:13px;color:var(--muted)}
+.tcard ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:8px;font-size:14.5px;color:var(--muted)}
+.tcard ul b{color:var(--ink)}
+.tcard a{color:var(--ink);text-decoration-color:var(--tape);text-decoration-thickness:2px;text-underline-offset:3px}
+.tcard a:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 </style>
 
 <div class="wrap">
@@ -157,6 +161,7 @@ footer p{font-size:13px;color:var(--muted)}
         <div class="row"><span class="k">Canvas print</span><span class="v" id="v-canvas">—</span></div>
         <div class="row"><span class="k">Audio print</span><span class="v" id="v-audio">—</span></div>
         <div class="row"><span class="k">Fonts found</span><span class="v" id="v-fonts">—</span></div>
+        <div class="row"><span class="k">Browser protection</span><span class="v pending" id="v-prot">checking…</span></div>
       </div>
 
       <div class="r-group">
@@ -236,6 +241,52 @@ footer p{font-size:13px;color:var(--muted)}
       <div class="check"><span class="mk" aria-hidden="true">03</span><p><b>Never enter a password or payment from a scan.</b> <span>If a scanned page asks you to log in or pay, open your banking or account app directly instead.</span></p></div>
       <div class="check"><span class="mk" aria-hidden="true">04</span><p><b>Watch for urgency.</b> <span>"Your account is locked", "pay now to avoid a fine" — pressure is the oldest trick for switching off your judgement.</span></p></div>
       <div class="check"><span class="mk" aria-hidden="true">05</span><p><b>Keep your phone and browser updated.</b> <span>A modern browser hands over less and blocks more. Updates close the holes a malicious page tries to use once you land on it.</span></p></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Lock it down</p>
+    <h2>Make your browser harder to read</h2>
+    <p class="sub">You can't become invisible online, but you can stop the cheap tricks from working. Most of these take a few minutes and cost nothing.</p>
+    <div class="cards">
+      <div class="tcard">
+        <h3>Browsers worth trying</h3>
+        <ul>
+          <li><b>Firefox</b>: set Enhanced Tracking Protection to Strict. Also available on Android.</li>
+          <li><b>Brave</b>: blocks trackers and ads, and scrambles canvas and audio data.</li>
+          <li><b>Tor Browser</b>: the strongest option. It tries to make every user look the same. Slower, so keep it for sensitive browsing.</li>
+          <li><b>DuckDuckGo</b> (mobile): blocks trackers and upgrades links to HTTPS.</li>
+          <li><b>Safari</b> (iPhone): Intelligent Tracking Prevention is on by default.</li>
+        </ul>
+      </div>
+      <div class="tcard">
+        <h3>Extensions, kept short</h3>
+        <ul>
+          <li><b>uBlock Origin</b>: blocks ads, trackers and many malicious scripts.</li>
+          <li><b>Privacy Badger</b>: learns which trackers to block, with no list to maintain.</li>
+          <li>Every extension adds to what a site can see about you, so fewer is better. Skip "free VPN" and "anonymity" add-ons. Some sell browsing data.</li>
+        </ul>
+      </div>
+      <div class="tcard">
+        <h3>Settings to change today</h3>
+        <ul>
+          <li><b>HTTPS-only mode.</b> Firefox: Privacy &amp; Security. Chrome: Settings, Security, Always use secure connections.</li>
+          <li><b>Block third-party cookies.</b> Stops sites following you from one to another.</li>
+          <li><b>Ask where to save each file.</b> Chrome: Settings, Downloads. You see every download first.</li>
+          <li><b>Site permissions.</b> Set location and camera to "ask" or off for sites you don't trust.</li>
+          <li><b>A password manager.</b> It won't autofill on a lookalike domain, which is how many QR and phishing pages collect passwords.</li>
+          <li><b>Phone basics.</b> Passcode on, auto-updates on, two-factor on your email and bank.</li>
+        </ul>
+      </div>
+      <div class="tcard">
+        <h3>Check yourself</h3>
+        <ul>
+          <li><a href="https://coveryourtracks.eff.org" target="_blank" rel="noopener">EFF Cover Your Tracks</a>: how unique your browser looks.</li>
+          <li><a href="https://browserleaks.com" target="_blank" rel="noopener">BrowserLeaks</a>: detailed canvas, WebRTC and font checks.</li>
+          <li><a href="https://amiunique.org" target="_blank" rel="noopener">AmIUnique</a>: how rare your fingerprint is.</li>
+        </ul>
+        <p class="fine">Run one check now, make the changes, then run it again. A VPN hides your IP from sites but not your device fingerprint, so treat it as one layer.</p>
+      </div>
     </div>
   </section>
 
@@ -426,6 +477,50 @@ footer p{font-size:13px;color:var(--muted)}
     }).catch(function(){ clearTimeout(ctrl); ipFail("blocked in preview — host it to see your IP"); });
   })();
 
+  // ---- Browser protection detection ----
+  // A blank canvas coming back means reads are blocked. Two identical renders
+  // coming back different means the output is being scrambled.
+  (function detectProtection(){
+    var reasons = [], braveOn = false;
+    function drawFP(){
+      var c = document.createElement("canvas"); c.width = 240; c.height = 60;
+      var cx = c.getContext("2d"); if(!cx) return null;
+      cx.textBaseline = "top"; cx.font = "16px 'Arial'";
+      cx.fillStyle = "#f60"; cx.fillRect(0,0,120,30);
+      cx.fillStyle = "#069"; cx.fillText("Fingerprint 0123", 4, 8);
+      return c;
+    }
+    try{
+      var a = drawFP(), b = drawFP();
+      var blank = document.createElement("canvas"); blank.width = 240; blank.height = 60;
+      if(a && b){
+        var first = a.toDataURL(), second = b.toDataURL();
+        if(first === blank.toDataURL()) reasons.push("canvas blocked");
+        else if(first !== second) reasons.push("canvas scrambled");
+      }
+    }catch(e){ reasons.push("canvas blocked"); }
+
+    function render(){
+      var list = reasons.slice();
+      if(braveOn) list.unshift("Brave shuffles data");
+      var gpu = (document.getElementById("v-gpu") || {}).textContent || "";
+      if(/masked|blocked/.test(gpu)) list.push("GPU masked");
+      if(list.length){
+        set("v-prot", list.join(" · "), "");
+        var fn = document.getElementById("v-fpnote");
+        if(fn) fn.textContent = "This browser scrambles some of the data above, so the ID may change between visits. That is protection working.";
+      } else {
+        set("v-prot", "none detected", "warn");
+      }
+    }
+    render();
+    try{
+      if(navigator.brave && navigator.brave.isBrave){
+        navigator.brave.isBrave().then(function(yes){ if(yes){ braveOn = true; render(); } }).catch(function(){});
+      }
+    }catch(e){}
+  })();
+
   // ---- Composite fingerprint ID: STABLE signals only, in a FIXED order ----
   // Volatile things (local time, battery, IP, location, network, WebRTC) and
   // toggleable prefs (theme, reduced-motion, Do-Not-Track) are deliberately left
@@ -484,7 +579,20 @@ footer p{font-size:13px;color:var(--muted)}
               "That is the whole point: a web page can push a file onto your device the second you open it. " +
               "Imagine this had been a fake invoice, or an app pretending to be from your bank.\n\n" +
               "You can delete this safely.  — A cyber-awareness demo";
+  // Browsers that intercept downloads (Firefox on Android, and iOS, which
+  // blocks scripted downloads anyway) never get the file sent at all.
+  function interceptsDownloads(){
+    var ua = navigator.userAgent || "";
+    var ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    var ffAndroid = /Android/.test(ua) && /Firefox\//.test(ua);
+    return ios || ffAndroid;
+  }
   function drop(){
+    if(interceptsDownloads()){
+      if(status) status.textContent = "Not sent. This browser intercepts downloads, so we didn't send one at all. Pages can't quietly push files onto this device here. That protection is exactly what you want.";
+      if(btn) btn.hidden = true;
+      return;
+    }
     try{
       var blob = new Blob([note2], {type:"text/plain"});
       var url = URL.createObjectURL(blob);
