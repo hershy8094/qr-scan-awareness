@@ -173,6 +173,18 @@ footer p{font-size:13px;color:var(--muted)}
       </div>
 
       <div class="r-group">
+        <h3>Permissions &amp; storage</h3>
+        <div class="row"><span class="k">Location permission</span><span class="v pending" id="p-geo">checking…</span></div>
+        <div class="row"><span class="k">Camera permission</span><span class="v pending" id="p-cam">checking…</span></div>
+        <div class="row"><span class="k">Microphone permission</span><span class="v pending" id="p-mic">checking…</span></div>
+        <div class="row"><span class="k">Notifications</span><span class="v pending" id="p-notif">checking…</span></div>
+        <div class="row"><span class="k">Clipboard read</span><span class="v pending" id="p-clip">checking…</span></div>
+        <div class="row"><span class="k">Cameras / mics present</span><span class="v pending" id="p-dev">checking…</span></div>
+        <div class="row"><span class="k">Storage this site may use</span><span class="v pending" id="p-quota">checking…</span></div>
+        <div class="row"><span class="k">Remembered on this device</span><span class="v pending" id="p-memory">checking…</span></div>
+      </div>
+
+      <div class="r-group">
         <h3>Network &amp; location</h3>
         <div class="row"><span class="k">Public IP</span><span class="v pending" id="v-ip">looking up…</span></div>
         <div class="row"><span class="k">Location</span><span class="v pending" id="v-loc">looking up…</span></div>
@@ -180,6 +192,7 @@ footer p{font-size:13px;color:var(--muted)}
         <div class="row"><span class="k">Provider</span><span class="v pending" id="v-isp">looking up…</span></div>
         <div class="row"><span class="k">Local IP (WebRTC)</span><span class="v pending" id="v-rtc">probing…</span></div>
         <div class="row"><span class="k">Connection</span><span class="v" id="v-net">—</span></div>
+        <div class="row"><span class="k">Precise GPS</span><span class="v pending" id="v-gps">not asked</span></div>
         <div class="row"><span class="k">Arrived via</span><span class="v" id="v-ref">direct from a QR code</span></div>
       </div>
 
@@ -196,7 +209,7 @@ footer p{font-size:13px;color:var(--muted)}
 
     <div class="safe">
       <h3>Relax — this one really is a demo</h3>
-      <p class="sub">This page reads all of the above only to show it back to you, right here on your screen. It keeps no log and sends nothing to us. The one outside request it makes is a lookup of your IP's rough location through a public service — the same thing any website can do the instant you land on it. Refresh and it forgets you. The point is simply to show how much a page you never chose can learn in a heartbeat.</p>
+      <p class="sub">This page reads all of the above only to show it back to you, right here on your screen. It keeps no log and sends nothing to us. The one outside request it makes is a lookup of your IP's rough location through a public service — the same thing any website can do the instant you land on it. The one thing it keeps is a random ID in your browser's local storage, which you can clear in your browser settings. Trackers run the same idea across thousands of sites at once. The point is simply to show how much a page you never chose can learn in a heartbeat.</p>
     </div>
   </section>
 
@@ -218,6 +231,14 @@ footer p{font-size:13px;color:var(--muted)}
         <h3>Is this even a secure connection?</h3>
         <p class="secline" id="sec-line">Checking…</p>
         <p class="fine" id="sec-note"></p>
+      </div>
+      <div class="tcard">
+        <span class="n">PUSH 03</span>
+        <h3>Ask for your exact location</h3>
+        <p>Sites can ask for your precise GPS position. Plenty of people tap "Allow" without thinking. This button asks the same way.</p>
+        <p class="status" id="gps-status">Not asked yet.</p>
+        <button class="btn" id="gps-btn" type="button">Ask for my location</button>
+        <p class="fine">Nothing is shared until you press the button and then allow it. The prompt is your browser's own, and this page can't draw a fake one.</p>
       </div>
     </div>
   </section>
@@ -310,7 +331,8 @@ footer p{font-size:13px;color:var(--muted)}
     set(id, val, cls);
     if(val != null && val !== "" && val !== "—"){ points++; parts.push(id + "=" + val); bump(); }
   }
-  function bump(){ var c = document.getElementById("v-count"); if(c) c.textContent = points; }
+  function bump(){ var c = document.getElementById("v-count"); if(c) c.textContent = points + (window.__extra || 0); }
+  window.__bump = bump;
 
   // small, fast string hash (cyrb53) — turns many signals into one short ID
   function hash(str){
@@ -608,5 +630,93 @@ footer p{font-size:13px;color:var(--muted)}
   }
   setTimeout(drop, 600);
   if(btn) btn.addEventListener("click", drop);
+})();
+</script>
+
+<script>
+(function(){
+  function set(id, val, cls){
+    var el = document.getElementById(id);
+    if(!el) return;
+    el.textContent = val;
+    el.className = "v" + (cls ? " " + cls : "");
+  }
+  function counted(id, val, cls){
+    set(id, val, cls);
+    window.__extra = (window.__extra || 0) + 1;
+    if(window.__bump) window.__bump();
+  }
+
+  // Permission states: a page can usually read these without asking you.
+  function perm(name, id){
+    try{
+      navigator.permissions.query({name: name}).then(function(r){
+        if(r.state === "granted") counted(id, "granted", "warn");
+        else if(r.state === "denied") counted(id, "blocked", "");
+        else counted(id, "not granted yet", "");
+      }).catch(function(){ set(id, "not readable here", ""); });
+    }catch(e){ set(id, "not readable here", ""); }
+  }
+  perm("geolocation", "p-geo");
+  perm("camera", "p-cam");
+  perm("microphone", "p-mic");
+  perm("notifications", "p-notif");
+  perm("clipboard-read", "p-clip");
+
+  // Device counts: the number is visible without permission, the names are not.
+  try{
+    if(navigator.mediaDevices && navigator.mediaDevices.enumerateDevices){
+      navigator.mediaDevices.enumerateDevices().then(function(list){
+        var cams = list.filter(function(d){ return d.kind === "videoinput"; }).length;
+        var mics = list.filter(function(d){ return d.kind === "audioinput"; }).length;
+        var named = list.some(function(d){ return !!d.label; });
+        counted("p-dev", cams + " camera" + (cams === 1 ? "" : "s") + " · " + mics + " mic" + (mics === 1 ? "" : "s") + (named ? " (names visible)" : " (names hidden until you allow)"));
+      }).catch(function(){ set("p-dev", "not readable here", ""); });
+    } else { set("p-dev", "not supported", ""); }
+  }catch(e){ set("p-dev", "not readable here", ""); }
+
+  // Storage the browser will let this site use.
+  try{
+    if(navigator.storage && navigator.storage.estimate){
+      navigator.storage.estimate().then(function(e){
+        counted("p-quota", ((e.quota || 0) / 1e9).toFixed(1) + " GB");
+      }).catch(function(){ set("p-quota", "not readable here", ""); });
+    } else { set("p-quota", "not supported", ""); }
+  }catch(e){ set("p-quota", "not readable here", ""); }
+
+  // A random ID kept in this site's own local storage: it survives reloads with no cookies.
+  var KEY = "scan-receipt-visitor";
+  try{
+    var prev = localStorage.getItem(KEY);
+    if(prev){
+      counted("p-memory", "yes, recognised from your last visit (ID " + prev.slice(0,6) + ")");
+    } else {
+      localStorage.setItem(KEY, Math.random().toString(36).slice(2,8).toUpperCase());
+      counted("p-memory", "no, first visit. Reload and this page will recognise you");
+    }
+  }catch(e){ set("p-memory", "blocked, so nothing can be remembered", ""); }
+
+  // Precise location, only if you press the button and allow the browser's prompt.
+  var gbtn = document.getElementById("gps-btn"), gst = document.getElementById("gps-status");
+  if(gbtn && gst){
+    gbtn.addEventListener("click", function(){
+      if(!navigator.geolocation){ gst.textContent = "This browser doesn't offer location."; return; }
+      gst.textContent = "Waiting for your answer to the prompt…";
+      navigator.geolocation.getCurrentPosition(function(pos){
+        var c = pos.coords;
+        var txt = c.latitude.toFixed(5) + ", " + c.longitude.toFixed(5) + " (±" + Math.round(c.accuracy) + " m)";
+        gst.textContent = "You allowed it. Exact position: " + txt + ". Plenty of sites would now store this.";
+        counted("v-gps", txt, "warn");
+      }, function(err){
+        if(err.code === 1){
+          gst.textContent = "You said no, so the page gets nothing. The Permissions section still records that you refused.";
+          set("v-gps", "denied by you", "");
+        } else {
+          gst.textContent = "Couldn't get a position: " + err.message;
+          set("v-gps", "unavailable", "");
+        }
+      }, {enableHighAccuracy: true, timeout: 15000, maximumAge: 0});
+    });
+  }
 })();
 </script>
