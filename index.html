@@ -347,7 +347,7 @@ footer p{font-size:13px;color:var(--muted)}
         var buf = ev.renderedBuffer.getChannelData(0), sum=0;
         for(var i=4500;i<5000;i++){ sum += Math.abs(buf[i]); }
         got("v-audio", hash(sum.toString()).slice(0,10));
-        finish();
+        computeFP();
       };
     } else { set("v-audio","no audio API"); }
   }catch(e){ set("v-audio","blocked"); }
@@ -423,20 +423,27 @@ footer p{font-size:13px;color:var(--muted)}
       if(d.latitude!=null && d.longitude!=null) got("v-coords", d.latitude.toFixed(3)+", "+d.longitude.toFixed(3));
       if(d.connection && d.connection.isp) got("v-isp", d.connection.isp);
       else if(d.org) got("v-isp", d.org);
-      finish();
     }).catch(function(){ clearTimeout(ctrl); ipFail("blocked in preview — host it to see your IP"); });
   })();
 
-  // ---- Composite fingerprint ID ----
-  var finished=false;
-  function finish(){
-    if(finished) return; finished=true;
-    setTimeout(function(){
-      var fp = document.getElementById("v-fp");
-      if(fp) fp.textContent = hash(parts.join("|"));
-    }, 250);
+  // ---- Composite fingerprint ID: STABLE signals only, in a FIXED order ----
+  // Volatile things (local time, battery, IP, location, network, WebRTC) and
+  // toggleable prefs (theme, reduced-motion, Do-Not-Track) are deliberately left
+  // out, so the ID comes out the same on every visit to the same device+browser.
+  var FP_IDS = ["v-os","v-screen","v-avail","v-depth","v-mem","v-cores","v-touch",
+                "v-browser","v-engine","v-plat","v-lang","v-tz","v-cookie",
+                "v-gpu","v-gpuv","v-canvas","v-audio","v-fonts","v-pointer","v-hover"];
+  var fpDone=false;
+  function computeFP(){
+    if(fpDone) return; fpDone=true;
+    var out = document.getElementById("v-fp");
+    if(!out) return;
+    var str = FP_IDS.map(function(id){ var el=document.getElementById(id); return id+"="+(el?el.textContent:""); }).join("|");
+    out.textContent = hash(str);
   }
-  setTimeout(finish, 2200); // ensure it computes even if async bits are slow
+  // computeFP() runs the moment the audio probe settles; this fallback covers
+  // browsers where audio fingerprinting is blocked or unsupported.
+  setTimeout(computeFP, 2500);
 
   // ---- Decorative, non-scannable QR-style graphic ----
   var cv = document.getElementById("qr");
