@@ -163,6 +163,7 @@ footer p{font-size:13px;color:var(--muted)}
         <div class="row"><span class="k">Fonts found</span><span class="v" id="v-fonts">—</span></div>
         <div class="row"><span class="k">Font names</span><span class="v pending" id="v-fontnames">checking…</span></div>
         <div class="row"><span class="k">Browser protection</span><span class="v pending" id="v-prot">checking…</span></div>
+        <div class="row"><span class="k">Changed since last visit</span><span class="v pending" id="v-drift">checking…</span></div>
       </div>
 
       <div class="r-group">
@@ -557,8 +558,8 @@ footer p{font-size:13px;color:var(--muted)}
   // Volatile things (local time, battery, IP, location, network, WebRTC) and
   // toggleable prefs (theme, reduced-motion, Do-Not-Track) are deliberately left
   // out, so the ID comes out the same on every visit to the same device+browser.
-  var FP_IDS = ["v-os","v-screen","v-avail","v-depth","v-mem","v-cores","v-touch",
-                "v-browser","v-engine","v-plat","v-lang","v-tz","v-cookie",
+  var FP_IDS = ["v-os","v-screen","v-depth","v-mem","v-cores","v-touch",
+                "v-engine","v-plat","v-lang","v-tz","v-cookie",
                 "v-gpu","v-gpuv","v-canvas","v-audio","v-fonts","v-pointer","v-hover"];
   var fpDone=false;
   function computeFP(){
@@ -843,6 +844,29 @@ footer p{font-size:13px;color:var(--muted)}
   }
 
   Promise.all(pending).then(render);
+
+  // Compare this visit with the last one on this device and name what changed.
+  function drift(){
+    var out = document.getElementById("v-drift");
+    if(!out) return;
+    var ids = {"v-os":"OS","v-screen":"Screen","v-depth":"Colour depth","v-mem":"Memory","v-cores":"CPU cores","v-touch":"Touch points","v-engine":"Engine","v-plat":"Platform","v-lang":"Languages","v-tz":"Time zone","v-cookie":"Cookies","v-gpu":"Graphics chip","v-gpuv":"GPU vendor","v-canvas":"Canvas print","v-audio":"Audio print","v-fonts":"Fonts found","v-pointer":"Pointer","v-hover":"Hover","v-fp":"Fingerprint ID"};
+    var now = {};
+    Object.keys(ids).forEach(function(id){ var el = document.getElementById(id); now[id] = el ? el.textContent : ""; });
+    var prev = null;
+    try{ prev = JSON.parse(localStorage.getItem("scan-receipt-last") || "null"); }catch(e){ prev = null; }
+    try{ localStorage.setItem("scan-receipt-last", JSON.stringify(now)); }catch(e){}
+    if(!prev){
+      out.textContent = "first visit, nothing to compare yet";
+      out.className = "v";
+      return;
+    }
+    var changed = Object.keys(ids).filter(function(id){
+      return prev[id] !== undefined && prev[id] !== now[id];
+    }).map(function(id){ return ids[id]; });
+    out.textContent = changed.length ? "changed: " + changed.join(", ") : "nothing changed";
+    out.className = "v" + (changed.length ? " warn" : "");
+  }
+  setTimeout(drift, 2600);
 
   function render(){
     var group = document.getElementById("deep-group");
