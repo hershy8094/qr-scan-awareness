@@ -161,6 +161,7 @@ footer p{font-size:13px;color:var(--muted)}
         <div class="row"><span class="k">Canvas print</span><span class="v" id="v-canvas">—</span></div>
         <div class="row"><span class="k">Audio print</span><span class="v" id="v-audio">—</span></div>
         <div class="row"><span class="k">Fonts found</span><span class="v" id="v-fonts">—</span></div>
+        <div class="row"><span class="k">Font names</span><span class="v pending" id="v-fontnames">checking…</span></div>
         <div class="row"><span class="k">Browser protection</span><span class="v pending" id="v-prot">checking…</span></div>
       </div>
 
@@ -431,20 +432,25 @@ footer p{font-size:13px;color:var(--muted)}
 
   // ---- Installed fonts (measure-width trick) ----
   try{
-    var base=["monospace","sans-serif","serif"], test=["Arial","Arial Black","Calibri","Cambria","Comic Sans MS","Consolas","Courier New","Georgia","Helvetica","Impact","Lucida Console","Palatino","Segoe UI","Tahoma","Times New Roman","Trebuchet MS","Verdana","Menlo","Monaco","Roboto","Ubuntu","Noto Sans","Gill Sans","Franklin Gothic"];
+    var base=["monospace","sans-serif","serif"], test="Arial|Arial Black|Arial Narrow|Arial Rounded MT Bold|Bahnschrift|Calibri|Calibri Light|Cambria|Cambria Math|Candara|Comic Sans MS|Consolas|Constantia|Corbel|Courier New|Ebrima|Franklin Gothic Medium|Gabriola|Gadugi|Georgia|Impact|Leelawadee UI|Lucida Console|Lucida Sans Unicode|Malgun Gothic|Microsoft JhengHei|Microsoft YaHei|Microsoft Sans Serif|MV Boli|Myanmar Text|Nirmala UI|Palatino Linotype|Segoe Print|Segoe Script|Segoe UI|Segoe UI Emoji|Segoe UI Symbol|SimSun|Tahoma|Times New Roman|Trebuchet MS|Verdana|Yu Gothic|Century Gothic|Book Antiqua|Bookman Old Style|Garamond|Lucida Handwriting|Papyrus|Brush Script MT|Rockwell|Copperplate Gothic Bold|Gill Sans MT|Goudy Old Style|Tw Cen MT|Baskerville Old Face|Helvetica|Helvetica Neue|Menlo|Monaco|Avenir|Avenir Next|Futura|Hoefler Text|Optima|Didot|American Typewriter|Baskerville|Big Caslon|Chalkboard|Chalkduster|Cochin|Herculanum|Marker Felt|Noteworthy|Skia|Zapfino|Apple Chancery|Andale Mono|Charter|Iowan Old Style|Hiragino Sans|PingFang SC|Songti SC|Apple SD Gothic Neo|Kohinoor Devanagari|Geeza Pro|Thonburi|Athelas|Luminari|Silom|Ubuntu|Ubuntu Mono|Ubuntu Condensed|Cantarell|DejaVu Sans|DejaVu Sans Mono|DejaVu Serif|Liberation Sans|Liberation Serif|Liberation Mono|Noto Sans|Noto Serif|Noto Mono|Noto Color Emoji|Droid Sans|Roboto|Roboto Mono|Roboto Slab|Open Sans|Lato|Oswald|Montserrat|Source Sans Pro|Fira Sans|Fira Code|Inter|Carlito|Caladea|Cousine|Arimo|Tinos|Gentium|FreeSans|FreeSerif|Nimbus Sans|Nimbus Roman|Playfair Display|Merriweather|Raleway|Poppins|Nunito|PT Sans|PT Serif|Quicksand|Bebas Neue|Anton|Lobster|Pacifico|Dancing Script|Caveat|Archivo|Archivo Black|Barlow|Crimson Text|EB Garamond|Libre Baskerville|Josefin Sans|Karla|Mulish|Work Sans|Rubik|Hind|Exo 2|Titillium Web|Oxygen|Signika|Abel|Arvo|Bitter|Cinzel|Comfortaa|Dosis|Fjalla One|Indie Flower|Kanit|Lora|Maven Pro|Pathway Gothic One|Righteous|Russo One|Teko|Zilla Slab|Space Grotesk|Space Mono|IBM Plex Sans|IBM Plex Mono|JetBrains Mono|Source Code Pro|Cascadia Code|Hack|Victor Mono|Overpass|Heebo|Cairo|Tajawal|Amiri|Sarabun|Prompt|Sora|Manrope|DM Sans|DM Serif Display|Outfit|Plus Jakarta Sans|Syne|Figtree|Urbanist|Lexend|Instrument Serif".split("|");
     var s="mmmmmmmmmmlli", size="72px", span=document.createElement("span");
     span.style.cssText="position:absolute;left:-9999px;font-size:"+size;span.textContent=s;document.body.appendChild(span);
     var def={};
     base.forEach(function(b){ span.style.fontFamily=b; def[b]={w:span.offsetWidth,h:span.offsetHeight}; });
-    var found=0;
+    var found=0, names=[];
     test.forEach(function(f){
       for(var j=0;j<base.length;j++){
         span.style.fontFamily="'"+f+"',"+base[j];
-        if(span.offsetWidth!==def[base[j]].w || span.offsetHeight!==def[base[j]].h){ found++; break; }
+        if(span.offsetWidth!==def[base[j]].w || span.offsetHeight!==def[base[j]].h){ found++; names.push(f); break; }
       }
     });
     document.body.removeChild(span);
     got("v-fonts", found+" of "+test.length+" tested");
+    var fnEl = document.getElementById("v-fontnames");
+    if(fnEl){
+      fnEl.className = "v";
+      fnEl.textContent = names.length ? names.slice(0,40).join(", ") + (names.length > 40 ? " … +" + (names.length - 40) + " more" : "") : "none found";
+    }
   }catch(e){ set("v-fonts","blocked"); }
 
   // ---- Preferences ----
