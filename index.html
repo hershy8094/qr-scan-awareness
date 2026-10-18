@@ -1,0 +1,425 @@
+<title>Scan Receipt</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=JetBrains+Mono:wght@400;600;700&family=Public+Sans:wght@400;600;700&display=swap">
+<style>
+/* Layout: single reading column; a long "printed receipt" of everything the page can read is the centerpiece. */
+:root{
+  --paper:#EFF0EA; --ink:#15191F; --muted:#59626F; --line:#D4D7CD; --card:#FFFFFF;
+  --tape:#FFD21F; --alert:#B2301A; --ok:#2F7D4E; --faint:#F6F7F2;
+  --f-display:"Archivo Black","Arial Narrow",Impact,sans-serif;
+  --f-body:"Public Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0D1116; --ink:#E9ECE5; --muted:#99A1AC; --line:#2A313B; --card:#161B22;
+    --tape:#F4C815; --alert:#FF7A5E; --ok:#5FD08A; --faint:#11161C; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0D1116; --ink:#E9ECE5; --muted:#99A1AC; --line:#2A313B; --card:#161B22;
+  --tape:#F4C815; --alert:#FF7A5E; --ok:#5FD08A; --faint:#11161C; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:720px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:34px 56px;display:flex;flex-direction:column;gap:56px}
+h1,h2,h3{font-family:var(--f-display);font-weight:400;text-wrap:balance;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(40px,9vw,72px);line-height:.95;text-transform:uppercase}
+h1 mark{background:var(--tape);color:#15191F;padding:0 .08em}
+h2{font-size:clamp(26px,5.5vw,38px);line-height:1}
+p{margin:0}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.lede{font-size:18px;max-width:54ch}
+.sub{color:var(--muted);max-width:62ch}
+section{display:flex;flex-direction:column;gap:20px}
+.pill{display:inline-flex;align-items:center;gap:7px;font-family:var(--f-mono);font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:5px 11px;border-radius:999px;border:1.5px solid var(--line);color:var(--muted);width:max-content;max-width:100%}
+.pill b{color:var(--ok);font-weight:700}
+
+/* Hero */
+.hero{display:flex;flex-direction:column;gap:22px}
+.hero-top{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap}
+.sticker{flex:0 0 auto;width:132px;background:var(--tape);border-radius:12px;padding:12px;transform:rotate(-4deg);box-shadow:0 14px 26px -14px rgba(0,0,0,.4);display:flex;flex-direction:column;gap:8px;text-align:center;color:#15191F}
+.sticker canvas{width:100%;aspect-ratio:1;border-radius:4px;background:#fff;display:block}
+.sticker span{font-family:var(--f-mono);font-size:9.5px;font-weight:700;letter-spacing:.12em}
+
+/* Receipt */
+.receipt{background:var(--card);font-family:var(--f-mono);font-size:13.5px;line-height:1.5;padding:30px clamp(16px,4vw,28px);box-shadow:0 18px 40px -26px rgba(0,0,0,.5);position:relative;display:flex;flex-direction:column;gap:22px;border:1px solid var(--line)}
+.receipt::before,.receipt::after{content:"";position:absolute;left:0;right:0;height:10px;background-image:linear-gradient(45deg,transparent 50%,var(--paper) 50%),linear-gradient(-45deg,transparent 50%,var(--paper) 50%);background-size:14px 10px;background-repeat:repeat-x}
+.receipt::before{top:-1px;transform:rotate(180deg)}
+.receipt::after{bottom:-1px}
+.r-head{text-align:center;display:flex;flex-direction:column;gap:4px;border-bottom:2px dashed var(--line);padding-bottom:16px}
+.r-head b{font-size:16px;letter-spacing:.06em}
+.r-head small{color:var(--muted);font-size:11.5px;letter-spacing:.06em}
+.r-group{display:flex;flex-direction:column;gap:2px}
+.r-group>h3{font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;color:var(--muted);margin-bottom:6px;font-weight:700;text-transform:uppercase}
+.row{display:flex;justify-content:space-between;gap:16px;padding:4px 0;border-bottom:1px dotted var(--line)}
+.row .k{color:var(--muted);flex:0 1 auto;min-width:0}
+.row .v{text-align:right;min-width:0;overflow-wrap:anywhere;font-weight:600;flex:1 1 auto}
+.row .v.warn{color:var(--alert)}
+.row .v.pending{color:var(--muted);font-weight:400;font-style:italic}
+.r-total{border-top:2px dashed var(--line);padding-top:18px;display:flex;flex-direction:column;gap:10px;text-align:center}
+.r-total .fp{display:flex;flex-direction:column;gap:4px}
+.r-total .fp b{font-family:var(--f-display);font-size:clamp(24px,7vw,34px);line-height:1;letter-spacing:.02em;word-break:break-all;color:var(--alert)}
+.r-total small{color:var(--muted);font-size:11px;letter-spacing:.06em}
+.r-count{display:flex;align-items:baseline;justify-content:center;gap:10px}
+.r-count b{font-family:var(--f-display);font-size:42px;line-height:1}
+.barcode{height:44px;width:100%;margin-top:4px;background:repeating-linear-gradient(90deg,var(--ink) 0 2px,transparent 2px 4px,var(--ink) 4px 5px,transparent 5px 9px,var(--ink) 9px 12px,transparent 12px 14px);opacity:.82}
+
+/* Reassurance band */
+.safe{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--ok);border-radius:10px;padding:18px 20px;display:flex;flex-direction:column;gap:8px}
+.safe h3{font-family:var(--f-body);font-weight:700;font-size:16px;color:var(--ok);margin:0}
+
+/* Takeaways */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.tcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 18px 20px;display:flex;flex-direction:column;gap:8px}
+.tcard .n{font-family:var(--f-mono);font-size:12px;color:var(--muted);letter-spacing:.1em;font-weight:700}
+.tcard h3{font-family:var(--f-body);font-weight:700;font-size:16.5px;margin:0}
+.tcard p{font-size:14.5px;color:var(--muted)}
+
+/* Checklist */
+.checklist{display:flex;flex-direction:column;gap:2px}
+.check{display:flex;gap:13px;padding:13px 2px;border-bottom:1px solid var(--line);align-items:baseline}
+.check:last-child{border-bottom:0}
+.check .mk{font-family:var(--f-display);color:var(--tape);font-size:17px;flex:0 0 auto;line-height:1.3}
+.check b{font-weight:700}
+.check span{color:var(--muted);font-size:14.5px}
+
+footer{border-top:2px solid var(--ink);padding-top:18px;display:flex;flex-direction:column;gap:6px}
+footer p{font-size:13px;color:var(--muted)}
+.credit{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.06em}
+</style>
+
+<div class="wrap">
+
+  <header class="hero">
+    <p class="eyebrow">Digital safety · A demonstration</p>
+    <div class="hero-top">
+      <figure class="sticker">
+        <canvas id="qr" width="240" height="240" aria-label="Decorative QR code"></canvas>
+        <span>SCAN ME :)</span>
+      </figure>
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:16px">
+        <h1>You just scanned a <mark>stranger's</mark> QR code.</h1>
+        <p class="lede">You don't know who made it or where it points. Yet the moment this page opened, it started building a profile of you — automatically, silently, without asking.</p>
+      </div>
+    </div>
+    <p class="pill">This demo only shows the data to you · <b>we store nothing</b></p>
+  </header>
+
+  <section>
+    <p class="eyebrow">Your scan receipt</p>
+    <h2>What this page read in one second</h2>
+    <p class="sub">You typed none of this. A browser hands it over to every site it opens. A real scam page would quietly ship all of it to a server before the page even finished loading.</p>
+
+    <div class="receipt" role="group" aria-label="Simulated data receipt">
+      <div class="r-head">
+        <b>RANDOM-QR-CODE.EXAMPLE</b>
+        <small id="r-stamp">VISIT LOGGED · —</small>
+      </div>
+
+      <div class="r-group">
+        <h3>Device &amp; screen</h3>
+        <div class="row"><span class="k">Device / OS</span><span class="v" id="v-os">—</span></div>
+        <div class="row"><span class="k">Screen</span><span class="v" id="v-screen">—</span></div>
+        <div class="row"><span class="k">Usable area</span><span class="v" id="v-avail">—</span></div>
+        <div class="row"><span class="k">Colour depth</span><span class="v" id="v-depth">—</span></div>
+        <div class="row"><span class="k">Memory</span><span class="v" id="v-mem">—</span></div>
+        <div class="row"><span class="k">CPU cores</span><span class="v" id="v-cores">—</span></div>
+        <div class="row"><span class="k">Touch points</span><span class="v" id="v-touch">—</span></div>
+        <div class="row"><span class="k">Battery</span><span class="v" id="v-batt">—</span></div>
+      </div>
+
+      <div class="r-group">
+        <h3>Software</h3>
+        <div class="row"><span class="k">Browser</span><span class="v" id="v-browser">—</span></div>
+        <div class="row"><span class="k">Engine</span><span class="v" id="v-engine">—</span></div>
+        <div class="row"><span class="k">Platform</span><span class="v" id="v-plat">—</span></div>
+        <div class="row"><span class="k">Languages</span><span class="v" id="v-lang">—</span></div>
+        <div class="row"><span class="k">Time zone</span><span class="v" id="v-tz">—</span></div>
+        <div class="row"><span class="k">Local time</span><span class="v" id="v-time">—</span></div>
+        <div class="row"><span class="k">Cookies on</span><span class="v" id="v-cookie">—</span></div>
+        <div class="row"><span class="k">"Do Not Track"</span><span class="v" id="v-dnt">—</span></div>
+      </div>
+
+      <div class="r-group">
+        <h3>Hardware fingerprint</h3>
+        <div class="row"><span class="k">Graphics chip</span><span class="v" id="v-gpu">—</span></div>
+        <div class="row"><span class="k">GPU vendor</span><span class="v" id="v-gpuv">—</span></div>
+        <div class="row"><span class="k">Canvas print</span><span class="v" id="v-canvas">—</span></div>
+        <div class="row"><span class="k">Audio print</span><span class="v" id="v-audio">—</span></div>
+        <div class="row"><span class="k">Fonts found</span><span class="v" id="v-fonts">—</span></div>
+      </div>
+
+      <div class="r-group">
+        <h3>Settings that single you out</h3>
+        <div class="row"><span class="k">Theme</span><span class="v" id="v-scheme">—</span></div>
+        <div class="row"><span class="k">Reduced motion</span><span class="v" id="v-motion">—</span></div>
+        <div class="row"><span class="k">Pointer</span><span class="v" id="v-pointer">—</span></div>
+        <div class="row"><span class="k">Can hover</span><span class="v" id="v-hover">—</span></div>
+      </div>
+
+      <div class="r-group">
+        <h3>Network &amp; location</h3>
+        <div class="row"><span class="k">Public IP</span><span class="v pending" id="v-ip">looking up…</span></div>
+        <div class="row"><span class="k">Location</span><span class="v pending" id="v-loc">looking up…</span></div>
+        <div class="row"><span class="k">Coordinates</span><span class="v pending" id="v-coords">looking up…</span></div>
+        <div class="row"><span class="k">Provider</span><span class="v pending" id="v-isp">looking up…</span></div>
+        <div class="row"><span class="k">Local IP (WebRTC)</span><span class="v pending" id="v-rtc">probing…</span></div>
+        <div class="row"><span class="k">Connection</span><span class="v" id="v-net">—</span></div>
+        <div class="row"><span class="k">Arrived via</span><span class="v" id="v-ref">direct from a QR code</span></div>
+      </div>
+
+      <div class="r-total">
+        <div class="r-count"><span>DATA POINTS GRABBED</span><b id="v-count">0</b></div>
+        <div class="barcode" aria-hidden="true"></div>
+        <div class="fp">
+          <small>…AND COMBINED INTO ONE FINGERPRINT THAT RECOGNISES YOU AGAIN</small>
+          <b id="v-fp">computing…</b>
+          <small id="v-fpnote">This ID stays the same on your next visit — even in private mode, even with cookies off.</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="safe">
+      <h3>Relax — this one really is a demo</h3>
+      <p class="sub">This page reads all of the above only to show it back to you, right here on your screen. It keeps no log and sends nothing to us. The one outside request it makes is a lookup of your IP's rough location through a public service — the same thing any website can do the instant you land on it. Refresh and it forgets you. The point is simply to show how much a page you never chose can learn in a heartbeat.</p>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Why it matters</p>
+    <h2>A QR code is just a link you can't read</h2>
+    <div class="cards">
+      <div class="tcard"><span class="n">01</span><h3>You can't see where it goes</h3><p>A written link gives you clues. A QR code hides the address inside a pattern, so "menu" or "free parking" can point anywhere at all.</p></div>
+      <div class="tcard"><span class="n">02</span><h3>Stickers are easy to swap</h3><p>Scammers paste their own code over the real one on parking meters, posters and payment signs. The sticker looks official; the destination isn't.</p></div>
+      <div class="tcard"><span class="n">03</span><h3>The page loads before you think</h3><p>By the time you read the address bar, the site has your full profile — and a convincing fake login is one tap from your password.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Before you scan</p>
+    <h2>Five habits that keep you safe</h2>
+    <div class="checklist">
+      <div class="check"><span class="mk" aria-hidden="true">01</span><p><b>Check the real address first.</b> <span>Your phone previews the link before opening it. Read it. If it isn't the site you expect, close it.</span></p></div>
+      <div class="check"><span class="mk" aria-hidden="true">02</span><p><b>Be suspicious of stickers.</b> <span>Look for a code pasted on top of another, or one that seems added as an afterthought. When in doubt, type the web address yourself.</span></p></div>
+      <div class="check"><span class="mk" aria-hidden="true">03</span><p><b>Never enter a password or payment from a scan.</b> <span>If a scanned page asks you to log in or pay, open your banking or account app directly instead.</span></p></div>
+      <div class="check"><span class="mk" aria-hidden="true">04</span><p><b>Watch for urgency.</b> <span>"Your account is locked", "pay now to avoid a fine" — pressure is the oldest trick for switching off your judgement.</span></p></div>
+      <div class="check"><span class="mk" aria-hidden="true">05</span><p><b>Keep your phone and browser updated.</b> <span>A modern browser hands over less and blocks more. Updates close the holes a malicious page tries to use once you land on it.</span></p></div>
+    </div>
+  </section>
+
+  <footer>
+    <p><b>Take a breath before the next scan.</b> If this made you pause, it worked.</p>
+    <p class="credit">A cyber-awareness demonstration · no data leaves this page except a public IP-location lookup</p>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  var n = navigator, points = 0, parts = [];
+  function set(id, val, cls){
+    var el = document.getElementById(id);
+    if(!el) return;
+    el.textContent = val;
+    el.className = "v" + (cls ? " " + cls : "");
+  }
+  function got(id, val, cls){                 // record a captured value and count it
+    set(id, val, cls);
+    if(val != null && val !== "" && val !== "—"){ points++; parts.push(id + "=" + val); bump(); }
+  }
+  function bump(){ var c = document.getElementById("v-count"); if(c) c.textContent = points; }
+
+  // small, fast string hash (cyrb53) — turns many signals into one short ID
+  function hash(str){
+    var h1 = 0xdeadbeef ^ 0, h2 = 0x41c6ce57 ^ 0;
+    for(var i=0, ch; i<str.length; i++){
+      ch = str.charCodeAt(i);
+      h1 = Math.imul(h1 ^ ch, 2654435761);
+      h2 = Math.imul(h2 ^ ch, 1597334677);
+    }
+    h1 = Math.imul(h1 ^ (h1>>>16), 2246822507) ^ Math.imul(h2 ^ (h2>>>13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2>>>16), 2246822507) ^ Math.imul(h1 ^ (h1>>>13), 3266489909);
+    return (4294967296 * (2097151 & h2) + (h1>>>0)).toString(16).toUpperCase().padStart(13,"0");
+  }
+
+  var ua = n.userAgent || "";
+
+  // ---- Device / screen ----
+  var os = "Unknown";
+  if(/iPhone/.test(ua)) os="iPhone (iOS)"; else if(/iPad/.test(ua)) os="iPad";
+  else if(/Android/.test(ua)) os="Android"; else if(/Windows NT 10/.test(ua)) os="Windows 10/11";
+  else if(/Windows/.test(ua)) os="Windows"; else if(/Mac OS X|Macintosh/.test(ua)) os="macOS";
+  else if(/CrOS/.test(ua)) os="ChromeOS"; else if(/Linux/.test(ua)) os="Linux";
+  got("v-os", os);
+  if(window.screen){
+    got("v-screen", screen.width+"×"+screen.height+" @"+(window.devicePixelRatio||1)+"x");
+    got("v-avail", screen.availWidth+"×"+screen.availHeight);
+    got("v-depth", (screen.colorDepth||24)+"-bit colour");
+  }
+  got("v-mem", (n.deviceMemory ? "~"+n.deviceMemory+" GB RAM" : "hidden"));
+  got("v-cores", (n.hardwareConcurrency ? n.hardwareConcurrency+" cores" : "hidden"));
+  got("v-touch", (("maxTouchPoints" in n) ? n.maxTouchPoints+" fingers" : "hidden"));
+
+  // ---- Software ----
+  var br="Unknown", eng="Unknown";
+  if(/Edg\//.test(ua)) br="Microsoft Edge"; else if(/OPR\//.test(ua)) br="Opera";
+  else if(/SamsungBrowser/.test(ua)) br="Samsung Internet"; else if(/Firefox\//.test(ua)) br="Firefox";
+  else if(/CriOS/.test(ua)) br="Chrome (iOS)"; else if(/Chrome\//.test(ua)) br="Chrome";
+  else if(/Safari\//.test(ua)) br="Safari";
+  var m = ua.match(/(?:Version|Firefox|Edg|OPR|Chrome|CriOS)\/(\d+)/); if(m) br += " "+m[1];
+  if(/Gecko\/|Firefox/.test(ua)) eng="Gecko"; if(/AppleWebKit/.test(ua)) eng="WebKit/Blink";
+  got("v-browser", br); got("v-engine", eng);
+  got("v-plat", n.platform || "hidden");
+  got("v-lang", (n.languages && n.languages.length ? n.languages.join(", ") : (n.language||"hidden")));
+  try{ got("v-tz", Intl.DateTimeFormat().resolvedOptions().timeZone); }catch(e){ set("v-tz","hidden"); }
+  var now = new Date(); got("v-time", now.toLocaleString());
+  got("v-cookie", (n.cookieEnabled ? "yes" : "no"));
+  var dnt = n.doNotTrack || window.doNotTrack;
+  got("v-dnt", (dnt==="1"||dnt==="yes") ? "on (ignored by trackers)" : "off", (dnt==="1"||dnt==="yes")?"":"warn");
+  var stamp = document.getElementById("r-stamp");
+  if(stamp) stamp.textContent = "VISIT LOGGED · "+now.toLocaleDateString()+" "+now.toLocaleTimeString();
+
+  // ---- Hardware fingerprint: WebGL ----
+  try{
+    var gl = document.createElement("canvas").getContext("webgl") || document.createElement("canvas").getContext("experimental-webgl");
+    if(gl){
+      var dbg = gl.getExtension("WEBGL_debug_renderer_info");
+      if(dbg){
+        got("v-gpu", gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL));
+        got("v-gpuv", gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL));
+      } else { set("v-gpu","masked by browser"); set("v-gpuv","masked by browser"); }
+    } else { set("v-gpu","no WebGL"); }
+  }catch(e){ set("v-gpu","blocked"); }
+
+  // ---- Canvas fingerprint ----
+  try{
+    var c = document.createElement("canvas"); c.width=240; c.height=60;
+    var cx = c.getContext("2d");
+    cx.textBaseline="top"; cx.font="16px 'Arial'";
+    cx.fillStyle="#f60"; cx.fillRect(0,0,120,30);
+    cx.fillStyle="#069"; cx.fillText("Fingerprint \u{1F510} 0123", 4, 8);
+    cx.fillStyle="rgba(102,0,204,.6)"; cx.fillText("Fingerprint \u{1F510} 0123", 6, 10);
+    got("v-canvas", hash(c.toDataURL()).slice(0,10));
+  }catch(e){ set("v-canvas","blocked"); }
+
+  // ---- Audio fingerprint (async) ----
+  try{
+    var AC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if(AC){
+      var ac = new AC(1, 44100, 44100);
+      var osc = ac.createOscillator(); osc.type="triangle"; osc.frequency.value=10000;
+      var comp = ac.createDynamicsCompressor();
+      osc.connect(comp); comp.connect(ac.destination); osc.start(0);
+      ac.startRendering();
+      ac.oncomplete = function(ev){
+        var buf = ev.renderedBuffer.getChannelData(0), sum=0;
+        for(var i=4500;i<5000;i++){ sum += Math.abs(buf[i]); }
+        got("v-audio", hash(sum.toString()).slice(0,10));
+        finish();
+      };
+    } else { set("v-audio","no audio API"); }
+  }catch(e){ set("v-audio","blocked"); }
+
+  // ---- Installed fonts (measure-width trick) ----
+  try{
+    var base=["monospace","sans-serif","serif"], test=["Arial","Arial Black","Calibri","Cambria","Comic Sans MS","Consolas","Courier New","Georgia","Helvetica","Impact","Lucida Console","Palatino","Segoe UI","Tahoma","Times New Roman","Trebuchet MS","Verdana","Menlo","Monaco","Roboto","Ubuntu","Noto Sans","Gill Sans","Franklin Gothic"];
+    var s="mmmmmmmmmmlli", size="72px", span=document.createElement("span");
+    span.style.cssText="position:absolute;left:-9999px;font-size:"+size;span.textContent=s;document.body.appendChild(span);
+    var def={};
+    base.forEach(function(b){ span.style.fontFamily=b; def[b]={w:span.offsetWidth,h:span.offsetHeight}; });
+    var found=0;
+    test.forEach(function(f){
+      for(var j=0;j<base.length;j++){
+        span.style.fontFamily="'"+f+"',"+base[j];
+        if(span.offsetWidth!==def[base[j]].w || span.offsetHeight!==def[base[j]].h){ found++; break; }
+      }
+    });
+    document.body.removeChild(span);
+    got("v-fonts", found+" of "+test.length+" tested");
+  }catch(e){ set("v-fonts","blocked"); }
+
+  // ---- Preferences ----
+  function mq(q){ try{ return matchMedia(q).matches; }catch(e){ return false; } }
+  got("v-scheme", mq("(prefers-color-scheme: dark)") ? "dark" : "light");
+  got("v-motion", mq("(prefers-reduced-motion: reduce)") ? "reduced" : "full");
+  got("v-pointer", mq("(pointer: coarse)") ? "touch (coarse)" : "mouse (fine)");
+  got("v-hover", mq("(hover: hover)") ? "yes (has mouse)" : "no (touch only)");
+
+  // ---- Connection & referrer ----
+  var conn = n.connection || n.mozConnection || n.webkitConnection;
+  got("v-net", conn && conn.effectiveType ? conn.effectiveType.toUpperCase()+(conn.downlink?" · ~"+conn.downlink+" Mbps":"") : "hidden");
+  if(document.referrer){ try{ set("v-ref","arrived via "+new URL(document.referrer).hostname); }catch(e){} }
+
+  // ---- Battery (async) ----
+  if(n.getBattery){
+    n.getBattery().then(function(b){ got("v-batt", Math.round(b.level*100)+"%"+(b.charging?" · charging":"")); })
+      .catch(function(){ set("v-batt","hidden"); });
+  } else { set("v-batt","hidden"); }
+
+  // ---- WebRTC local-IP probe (works only when the page is served over a real origin) ----
+  try{
+    var RTC = window.RTCPeerConnection || window.webkitRTCPeerConnection || window.mozRTCPeerConnection;
+    if(RTC){
+      var pc = new RTC({iceServers:[]}), seen={}, done=false;
+      pc.createDataChannel("x");
+      pc.onicecandidate = function(e){
+        if(!e || !e.candidate || !e.candidate.candidate) return;
+        var mm = e.candidate.candidate.match(/([0-9]{1,3}(?:\.[0-9]{1,3}){3}|[a-f0-9]+\.local)/i);
+        if(mm && !seen[mm[1]]){
+          seen[mm[1]]=1; done=true;
+          var masked = /\.local$/i.test(mm[1]);
+          got("v-rtc", masked ? "masked ("+mm[1]+")" : mm[1], masked ? "" : "warn");
+        }
+      };
+      pc.createOffer().then(function(o){ return pc.setLocalDescription(o); }).catch(function(){});
+      setTimeout(function(){ if(!done) set("v-rtc","blocked — browser protected you","" ); try{pc.close();}catch(e){} }, 1600);
+    } else { set("v-rtc","not supported"); }
+  }catch(e){ set("v-rtc","blocked"); }
+
+  // ---- Public IP + location (needs a real origin; CSP sandbox will block it in preview) ----
+  function ipFail(msg){
+    ["v-ip","v-loc","v-coords","v-isp"].forEach(function(id){ set(id, msg, ""); });
+  }
+  (function lookup(){
+    if(!window.fetch){ return ipFail("needs hosting"); }
+    var ctrl = setTimeout(function(){ ipFail("couldn't reach lookup (host the page to enable)"); }, 4000);
+    fetch("https://ipwho.is/").then(function(r){ return r.json(); }).then(function(d){
+      clearTimeout(ctrl);
+      if(!d || d.success===false || !d.ip){ return ipFail("needs hosting"); }
+      got("v-ip", d.ip, "warn");
+      got("v-loc", [d.city,d.region,d.country].filter(Boolean).join(", "), "warn");
+      if(d.latitude!=null && d.longitude!=null) got("v-coords", d.latitude.toFixed(3)+", "+d.longitude.toFixed(3));
+      if(d.connection && d.connection.isp) got("v-isp", d.connection.isp);
+      else if(d.org) got("v-isp", d.org);
+      finish();
+    }).catch(function(){ clearTimeout(ctrl); ipFail("blocked in preview — host it to see your IP"); });
+  })();
+
+  // ---- Composite fingerprint ID ----
+  var finished=false;
+  function finish(){
+    if(finished) return; finished=true;
+    setTimeout(function(){
+      var fp = document.getElementById("v-fp");
+      if(fp) fp.textContent = hash(parts.join("|"));
+    }, 250);
+  }
+  setTimeout(finish, 2200); // ensure it computes even if async bits are slow
+
+  // ---- Decorative, non-scannable QR-style graphic ----
+  var cv = document.getElementById("qr");
+  if(cv && cv.getContext){
+    var ctx = cv.getContext("2d"), size=240, cells=21, cell=size/cells, seed=1337;
+    function rnd(){ seed=(seed*1103515245+12345)&0x7fffffff; return seed/0x7fffffff; }
+    ctx.fillStyle="#fff"; ctx.fillRect(0,0,size,size); ctx.fillStyle="#15191f";
+    for(var y=0;y<cells;y++) for(var x=0;x<cells;x++) if(rnd()>.55) ctx.fillRect(x*cell,y*cell,cell,cell);
+    ctx.fillStyle="#fff";
+    ctx.fillRect(0,0,7*cell,7*cell); ctx.fillRect((cells-7)*cell,0,7*cell,7*cell); ctx.fillRect(0,(cells-7)*cell,7*cell,7*cell);
+    function finder(fx,fy){ ctx.fillStyle="#15191f"; ctx.fillRect(fx*cell,fy*cell,7*cell,7*cell); ctx.fillStyle="#fff"; ctx.fillRect((fx+1)*cell,(fy+1)*cell,5*cell,5*cell); ctx.fillStyle="#15191f"; ctx.fillRect((fx+2)*cell,(fy+2)*cell,3*cell,3*cell); }
+    finder(0,0); finder(cells-7,0); finder(0,cells-7);
+  }
+})();
+</script>
