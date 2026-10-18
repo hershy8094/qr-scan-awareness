@@ -196,6 +196,10 @@ footer p{font-size:13px;color:var(--muted)}
         <div class="row"><span class="k">Arrived via</span><span class="v" id="v-ref">direct from a QR code</span></div>
       </div>
 
+      <div class="r-group" id="deep-group">
+        <h3>Deep fingerprint</h3>
+      </div>
+
       <div class="r-total">
         <div class="r-count"><span>DATA POINTS GRABBED</span><b id="v-count">0</b></div>
         <div class="barcode" aria-hidden="true"></div>
@@ -717,6 +721,144 @@ footer p{font-size:13px;color:var(--muted)}
         }
       }, {enableHighAccuracy: true, timeout: 15000, maximumAge: 0});
     });
+  }
+})();
+</script>
+
+<script>
+(function(){
+  var rows = [], pending = [];
+  function add(label, value){
+    if(value === undefined || value === null || value === "") value = "not exposed";
+    rows.push({label: label, value: String(value)});
+  }
+  function mq(q){ try{ return matchMedia(q).matches; }catch(e){ return null; } }
+  function yn(v){ return v === null ? "unknown" : (v ? "yes" : "no"); }
+  function hash(str){
+    var h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+    for(var i = 0, ch; i < str.length; i++){
+      ch = str.charCodeAt(i);
+      h1 = Math.imul(h1 ^ ch, 2654435761);
+      h2 = Math.imul(h2 ^ ch, 1597334677);
+    }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16).toUpperCase().padStart(13, "0");
+  }
+
+  // Locale, calendar and audio
+  try{
+    var o = Intl.DateTimeFormat().resolvedOptions();
+    add("Calendar", o.calendar);
+    add("Numbering system", o.numberingSystem);
+    add("Locale format", o.locale);
+  }catch(e){}
+  add("UTC offset (minutes)", new Date().getTimezoneOffset());
+  try{
+    var OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    add("Audio sample rate", new OAC(1, 1, 44100).sampleRate + " Hz");
+  }catch(e){}
+
+  // Display preferences
+  add("Wide colour (P3)", yn(mq("(color-gamut: p3)")));
+  add("HDR display", yn(mq("(dynamic-range: high)")));
+  add("Forced colours", mq("(forced-colors: active)") ? "on" : "off");
+  add("Inverted colours", mq("(inverted-colors: inverted)") ? "on" : "off");
+  add("Installed as app", yn(mq("(display-mode: standalone)")));
+  add("Hover available", yn(mq("(any-hover: hover)")));
+
+  // Browser internals
+  var n = navigator;
+  add("Built-in PDF viewer", yn(n.pdfViewerEnabled));
+  add("Browser vendor", n.vendor);
+  add("Plugins listed", n.plugins ? n.plugins.length : null);
+  add("MIME types listed", n.mimeTypes ? n.mimeTypes.length : null);
+  add("Automation flag", n.webdriver ? "set" : "not set");
+  try{
+    if(performance.memory) add("JS heap limit", (performance.memory.jsHeapSizeLimit / 1048576).toFixed(0) + " MB");
+  }catch(e){}
+
+  // Codec support
+  try{
+    var v = document.createElement("video");
+    var codecs = {
+      "H.264": 'video/mp4; codecs="avc1.42E01E"',
+      "HEVC": 'video/mp4; codecs="hvc1.1.6.L93.B0"',
+      "VP9": 'video/webm; codecs="vp9"',
+      "AV1": 'video/mp4; codecs="av01.0.05M.08"',
+      "Opus": 'audio/ogg; codecs="opus"'
+    };
+    var ok = Object.keys(codecs).filter(function(k){ return v.canPlayType(codecs[k]) !== ""; });
+    add("Video/audio codecs", ok.length ? ok.join(", ") : "none");
+  }catch(e){}
+
+  // WebGL limits and extensions (driver-level detail)
+  try{
+    var cv = document.createElement("canvas");
+    var gl = cv.getContext("webgl2") || cv.getContext("webgl");
+    if(gl){
+      var is2 = (typeof WebGL2RenderingContext !== "undefined") && (gl instanceof WebGL2RenderingContext);
+      add("WebGL version", is2 ? "2" : "1");
+      add("WebGL extensions", (gl.getSupportedExtensions() || []).length);
+      add("Max texture size", gl.getParameter(gl.MAX_TEXTURE_SIZE));
+      add("Max viewport", gl.getParameter(gl.MAX_VIEWPORT_DIMS).join(" × "));
+      add("Vertex attributes", gl.getParameter(gl.MAX_VERTEX_ATTRIBS));
+      add("Render buffer size", gl.getParameter(gl.MAX_RENDERBUFFER_SIZE));
+      var sp = gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT);
+      add("Shader float precision", sp ? sp.precision + " bits" : null);
+    }
+  }catch(e){}
+
+  // Installed speech voices (names visible without permission)
+  pending.push(new Promise(function(resolve){
+    try{
+      if(!window.speechSynthesis){ return resolve(); }
+      var done = false;
+      function finish(){
+        if(done) return; done = true;
+        var vs = speechSynthesis.getVoices();
+        add("Speech voices", vs.length ? vs.length + " installed (e.g. " + vs.slice(0,3).map(function(x){ return x.name; }).join(", ") + ")" : null);
+        resolve();
+      }
+      if(speechSynthesis.getVoices().length){ finish(); }
+      else { speechSynthesis.onvoiceschanged = finish; setTimeout(finish, 1200); }
+    }catch(e){ resolve(); }
+  }));
+
+  // Client hints (Chromium-based browsers expose these on request)
+  if(n.userAgentData && n.userAgentData.getHighEntropyValues){
+    pending.push(n.userAgentData.getHighEntropyValues(["architecture","bitness","model","platformVersion","fullVersionList"]).then(function(h){
+      add("Architecture", (h.architecture || "") + (h.bitness ? " · " + h.bitness + "-bit" : ""));
+      add("Device model", h.model);
+      add("OS version", h.platformVersion);
+      var brands = (h.fullVersionList || []).slice(0,3).map(function(b){ return b.brand + " " + b.version; }).join(", ");
+      add("Exact browser build", brands);
+    }).catch(function(){}));
+  }
+
+  Promise.all(pending).then(render);
+
+  function render(){
+    var group = document.getElementById("deep-group");
+    if(!group) return;
+    var parts = [], shown = 0;
+    rows.forEach(function(r){
+      var row = document.createElement("div"); row.className = "row";
+      var k = document.createElement("span"); k.className = "k"; k.textContent = r.label;
+      var val = document.createElement("span"); val.className = "v"; val.textContent = r.value;
+      row.appendChild(k); row.appendChild(val); group.appendChild(row);
+      parts.push(r.label + "=" + r.value);
+      if(r.value !== "not exposed") shown++;
+    });
+    var idRow = document.createElement("div"); idRow.className = "row";
+    var ik = document.createElement("span"); ik.className = "k"; ik.textContent = "Deep ID";
+    var iv = document.createElement("span"); iv.className = "v"; iv.textContent = hash(parts.join("|"));
+    idRow.appendChild(ik); idRow.appendChild(iv); group.appendChild(idRow);
+    var note = document.createElement("p"); note.className = "fine";
+    note.textContent = "We can't say how rare this is. AmIUnique compares yours against a large set of other visitors, which is how it can give a score. This page has no such set, so it lists what your browser exposes.";
+    group.appendChild(note);
+    window.__extra = (window.__extra || 0) + shown;
+    if(window.__bump) window.__bump();
   }
 })();
 </script>
