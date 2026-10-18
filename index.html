@@ -128,6 +128,7 @@ footer p{font-size:13px;color:var(--muted)}
       <div class="r-head">
         <b>RANDOM-QR-CODE.EXAMPLE</b>
         <small id="r-stamp">VISIT LOGGED · —</small>
+        <small id="r-drift">Since last visit: checking…</small>
       </div>
 
       <div class="r-group">
@@ -866,7 +867,11 @@ footer p{font-size:13px;color:var(--muted)}
     out.textContent = changed.length ? "changed: " + changed.join(", ") : "nothing changed";
     out.className = "v" + (changed.length ? " warn" : "");
   }
-  setTimeout(drift, 2600);
+  function mirrorDrift(){
+    var src = document.getElementById("v-drift"), hdr = document.getElementById("r-drift");
+    if(src && hdr) hdr.textContent = "Since last visit: " + src.textContent;
+  }
+  setTimeout(function(){ drift(); mirrorDrift(); }, 2600);
 
   function render(){
     var group = document.getElementById("deep-group");
