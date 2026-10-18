@@ -579,13 +579,14 @@ footer p{font-size:13px;color:var(--muted)}
               "That is the whole point: a web page can push a file onto your device the second you open it. " +
               "Imagine this had been a fake invoice, or an app pretending to be from your bank.\n\n" +
               "You can delete this safely.  — A cyber-awareness demo";
-  // Browsers that intercept downloads (Firefox on Android, and iOS, which
-  // blocks scripted downloads anyway) never get the file sent at all.
+  // Browsers that intercept downloads (Firefox on Android, Samsung Internet, and
+  // iOS, which blocks scripted downloads anyway) never get the file sent at all.
   function interceptsDownloads(){
     var ua = navigator.userAgent || "";
     var ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
     var ffAndroid = /Android/.test(ua) && /Firefox\//.test(ua);
-    return ios || ffAndroid;
+    var samsung = /SamsungBrowser\//.test(ua);
+    return ios || ffAndroid || samsung;
   }
   function drop(){
     if(interceptsDownloads()){
