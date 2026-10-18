@@ -561,7 +561,7 @@ footer p{font-size:13px;color:var(--muted)}
   // out, so the ID comes out the same on every visit to the same device+browser.
   var FP_IDS = ["v-os","v-screen","v-depth","v-mem","v-cores","v-touch",
                 "v-engine","v-plat","v-lang","v-tz","v-cookie",
-                "v-gpu","v-gpuv","v-canvas","v-audio","v-fonts","v-pointer","v-hover"];
+                "v-gpu","v-gpuv","v-canvas","v-fonts","v-pointer","v-hover"];
   var fpDone=false;
   function computeFP(){
     if(fpDone) return; fpDone=true;
@@ -864,6 +864,11 @@ footer p{font-size:13px;color:var(--muted)}
     var changed = Object.keys(ids).filter(function(id){
       return prev[id] !== undefined && prev[id] !== now[id];
     }).map(function(id){ return ids[id]; });
+    var prot = document.getElementById("v-prot");
+    if(prot && changed.indexOf("Audio print") !== -1){
+      prot.textContent = (prot.textContent === "none detected" ? "" : prot.textContent + " · ") + "audio changes between visits";
+      prot.className = "v warn";
+    }
     out.textContent = changed.length ? "changed: " + changed.join(", ") : "nothing changed";
     out.className = "v" + (changed.length ? " warn" : "");
   }
