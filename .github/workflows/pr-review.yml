@@ -50,11 +50,20 @@ jobs:
               "Review complete: no issues found."
             - Do not approve or request changes. Only comment.
 
+      - name: Locate review transcript
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/transcript"
+          found=$(find "$RUNNER_TEMP" /home/runner -name 'claude-execution-output.json' 2>/dev/null | head -n 1)
+          echo "Transcript found at: ${found:-<none>}"
+          if [ -n "$found" ]; then cp "$found" "$RUNNER_TEMP/transcript/claude-execution-output.json"; fi
+          ls -la "$RUNNER_TEMP/transcript"
+
       - name: Save review transcript
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: claude-review-transcript-${{ github.event.pull_request.number }}-${{ github.run_id }}
-          path: ${{ runner.temp }}/claude-execution-output.json
+          path: ${{ runner.temp }}/transcript/
           if-no-files-found: warn
           retention-days: 90
