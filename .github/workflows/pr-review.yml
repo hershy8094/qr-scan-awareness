@@ -49,3 +49,12 @@ jobs:
             - If the PR has no findings, post a single top-level comment exactly:
               "Review complete: no issues found."
             - Do not approve or request changes. Only comment.
+
+      - name: Save review transcript
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-review-transcript-${{ github.event.pull_request.number }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/claude-execution-output.json
+          if-no-files-found: warn
+          retention-days: 90
