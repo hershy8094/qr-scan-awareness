@@ -1,0 +1,51 @@
+name: PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: pr-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  id-token: write
+
+jobs:
+  review:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Review pull request
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: "--model claude-haiku-5-5"
+          prompt: |
+            You are reviewing pull request #${{ github.event.pull_request.number }} in ${{ github.repository }}.
+            Review only the changes in this PR (diff against ${{ github.event.pull_request.base.sha }}).
+
+            Look for real defects only: correctness bugs, security issues, data loss or
+            migration risks, broken error handling, race conditions, and clear performance
+            regressions. Do not comment on style, naming, formatting, or preferences.
+
+            Output format (match this closely):
+            - For each finding, post an INLINE review comment on the exact changed line.
+              Start the comment with a priority tag:
+                [P1] - will break production, lose data, or open a security hole
+                [P2] - a real bug or risk that should be fixed before merge
+                [P3] - a minor issue worth fixing
+              Then one or two sentences: what is wrong, when it triggers, and the fix.
+            - Keep each comment short. No praise, no restating the diff, no filler.
+            - If the PR has no findings, post a single top-level comment exactly:
+              "Review complete: no issues found."
+            - Do not approve or request changes. Only comment.
